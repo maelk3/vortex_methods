@@ -2,18 +2,43 @@ using LinearAlgebra
 using PlotlyJS
 using PyPlot
 
-rc = 0.01                 # core radius
-α = 45*(π/180)            # angle of attack
-U = [cos(α), 0.0, sin(α)] # freestream velocity
+# FREESTREAM VELOCITY
+α  = 45*(π/180)               # angle of attack
+U₀ = 1.0                      # speed
+U  = U₀*[cos(α), 0.0, sin(α)] # freestream velocity
 
-c = 0.2 # chord length
-s = 1.0 # span length
+# BLADE PROFILE DEFINITION
+c = 0.2                       # chord length
+s = 1.0                       # span length
+η(x) = 0.02*sin((π/c)*x)      # chord profile
 
-η(x) = 0.02*sin((π/c)*x) # chord profile
+# BLADE DISCRETISATION PARAMETERS
+rc = 0.01                     # core radius
+N = 15                        # chordwise number of panels
+M = 7                         # spanwise number of panels
 
-N = 15 # chordwise number of panels
-M = 7  # spanwise number of panels
+# RANKINE VORTEX SEGMENT AND RING DEFINITION
+function induced_vel_segment(P, A, B, r₀, Γ, rc)
+    r₁ = A-P
+    r₂ = B-P
+    r = norm(r₁×r₀)
+    if r<rc && dot(r₁,r₀)*dot(r₂,r₀) <= 0
+        return (Γ/(2π*rc))*(r/rc)*(r₀×r₁)/norm(r₀×r₁)
+    else
+        return (Γ/4π)*(dot(r₀, r₁)/norm(r₁) - dot(r₀, r₂)/norm(r₂))*(r₁×r₀)/norm(r₁×r₀)^2
+    end
+end
 
+function induced_vel_ring(P, ring, Γ, rc)
+    u = zeros(3)
+    for i∈1:4
+        r₀ = (ring[i,2,:]-ring[i,1,:])/norm(ring[i,2,:]-ring[i,1,:])
+        u += induced_vel_segment(P, ring[i,1,:], ring[i,2,:], r₀, Γ, rc)
+    end
+    return u
+end
+
+# lagrangian markers coordinates
 x_markers = repeat(range(0, c, length=N+1), 1, M+1)
 y_markers = repeat(range(0, 1, length=M+1), 1, N+1)'
 z_markers = repeat(η.(range(0,c,length=N+1)), 1, M+1)
@@ -35,41 +60,6 @@ for i∈1:N
     collocation_normals[:,i,:] = repeat(normal/norm(normal), 1, M)
 end
 
-i = []
-j = []
-k = []
-
-for x∈0:N-1, y∈0:M-1
-    push!(i, x+(N+1)*y)
-    push!(j, x+(N+1)*(y+1))
-    push!(k, (x+1)+(N+1)*(y+1))
-
-    push!(i, x+(N+1)*y)
-    push!(j, (x+1)+(N+1)*y)
-    push!(k, (x+1)+(N+1)*(y+1))    
-end
-
-function induced_vel_segment(P, A, B, r₀, Γ, rc)
-    r₁ = A-P
-    r₂ = B-P
-    r = norm(r₁×r₀)
-    if r<rc && dot(r₁,r₀)*dot(r₂,r₀) <= 0
-        return (Γ/(2π*rc))*(r/rc)*(r₀×r₁)/norm(r₀×r₁)
-    else
-        return (Γ/4π)*(dot(r₀, r₁)/norm(r₁) - dot(r₀, r₂)/norm(r₂))*(r₁×r₀)/norm(r₁×r₀)^2
-    end
-end
-
-function induced_vel_ring(P, ring, Γ, rc)
-    u = zeros(3)
-    for i∈1:4
-        r₀ = (ring[i,2,:]-ring[i,1,:])/norm(ring[i,2,:]-ring[i,1,:])
-        u += induced_vel_segment(P, ring[i,1,:], ring[i,2,:], r₀, Γ, rc)
-    end
-    return u
-end
-
-
 rings = zeros(N, M, 4, 2, 3)
 for i∈1:N, j∈1:M    
     rings[i,j,1,1,:] = blade_panel_markers[:,i,j]
@@ -82,21 +72,21 @@ for i∈1:N, j∈1:M
     rings[i,j,4,2,:] = blade_panel_markers[:,i,j]                    
 end
 
+# influence matrix
 influence_matrix = zeros(N, M, N, M)
 for i∈1:N, j∈1:M, k∈1:N, l∈1:M
     influence_matrix[i,j,k,l] = dot(induced_vel_ring(collocation_points[:,i,j], rings[k,l,:,:,:], 1, rc), collocation_normals[:,i,j])
 end
 
-influence_matrix = reshape(influence_matrix, N*M, N*M)
 RHS = reshape(mapslices((x -> dot(x, -U)), collocation_normals, dims=(1)), N*M)
 
-Γ = reshape(influence_matrix \ RHS, N, M)
+Γ = reshape(reshape(influence_matrix, N*M, N*M) \ RHS, N, M)
 
 # total velocity field computation
 nx, ny, nz = 50, 1, 50
 
 xlims = [-0.1, 0.3]
-ylims = [0.5, 0.5]
+ylims = [0.5,  0.5]
 zlims = [-0.1, 0.1]
 
 x = permutedims(repeat(range(xlims[1], xlims[2], length=nx), 1, ny, nz), (1, 2, 3))
@@ -136,10 +126,7 @@ layout = PlotlyJS.Layout(scene=attr(xaxis_range=[-1.0, 1.0],
 
 surface = PlotlyJS.mesh3d(x=vec(x_markers),
                           y=vec(y_markers),
-                          z=vec(z_markers),
-                          i=i,
-                          j=j,
-                          k=k)
+                          z=vec(z_markers))
 
 normal_field = PlotlyJS.cone(x=vec(x_collocation),
                              y=vec(y_collocation),

@@ -2,7 +2,6 @@ using LinearAlgebra
 using PlotlyJS
 
 # velocity fied induced by the segment AB with core size rc using Biot-Savart law and rigid rotation
-
 nx = 30
 ny = 30
 nz = 30

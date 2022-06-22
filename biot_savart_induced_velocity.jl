@@ -2,7 +2,6 @@ using LinearAlgebra
 using PlotlyJS
 
 # velocity fied induced by the segment AB using the Biot-Savart law
-
 nx = 30
 ny = 30
 nz = 30
