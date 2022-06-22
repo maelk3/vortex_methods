@@ -12,7 +12,7 @@ s = 1.0 # span length
 η(x) = 0.02*sin((π/c)*x) # chord profile
 
 N = 15 # chordwise number of panels
-M = 7 # spanwise number of panels
+M = 7  # spanwise number of panels
 
 x_markers = repeat(range(0, c, length=N+1), 1, M+1)
 y_markers = repeat(range(0, 1, length=M+1), 1, N+1)'
@@ -34,7 +34,6 @@ for i∈1:N
     normal = [-(η(i*Δx)-η((i-1)*Δx)), 0, Δx]
     collocation_normals[:,i,:] = repeat(normal/norm(normal), 1, M)
 end
-
 
 i = []
 j = []
@@ -127,6 +126,7 @@ PyPlot.figure()
 PyPlot.streamplot(x_flat', z_flat', V[1,:,1,:]', V[3,:,1,:]', density=3, color="black", linewidth=0.5, arrowsize=0.5)
 PyPlot.plot(range(0,c,length=N+1), z_markers[:,1])
 PyPlot.title("velocity field around a wing profile")
+PyPlot.savefig("figures/wind_profile.pdf", bbox_inches="tight")
 PyPlot.show()
 
 # PlotlyJS
