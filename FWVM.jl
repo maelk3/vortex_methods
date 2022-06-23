@@ -13,11 +13,11 @@ s = 1.0                       # span length
 η(x) = 0.02*sin((π/c)*x)      # chord profile
 
 # DISCRETISATION PARAMETERS
-rc = 0.005                    # core radius
+rc = 0.00                     # core radius
 N = 5                         # chordwise number of panels
-M = 20                        # spanwise number of panels
+M = 40                        # spanwise number of panels
 
-nt = 100                      # number of time steps
+nt = 80                       # number of time steps
 Δt = 0.05                     # time intervals
 
 # RANKINE VORTEX SEGMENT AND RING DEFINITION
@@ -50,9 +50,11 @@ function induced_vel(P, rings, Γ, rc)
     return u
 end
 
+spanwise_distribution(x) = (cos(π*(1-x))+1)/2 # cosine distribution
+
 # lagrangian markers coordinates
 x_blade_markers = repeat(range(0, c, length=N+1), 1, M+1)
-y_blade_markers = repeat(range(0, s, length=M+1), 1, N+1)'
+y_blade_markers = repeat(spanwise_distribution.(range(0, s, length=M+1)), 1, N+1)'
 z_blade_markers = repeat(η.(range(0,c,length=N+1)), 1, M+1)
 
 # blade panel markers
@@ -91,7 +93,7 @@ for i∈1:N, j∈1:M, k∈1:N, l∈1:M
 end
 
 x_wake_markers = c*ones(nt+1, M+1) 
-y_wake_markers = repeat(range(0, s, length=M+1), 1, nt+1)'
+y_wake_markers = repeat(spanwise_distribution.(range(0, s, length=M+1)), 1, nt+1)'
 z_wake_markers = zeros(nt+1, M+1)
 wake_panel_markers = permutedims(cat(x_wake_markers, y_wake_markers, z_wake_markers, dims=3), (3, 1, 2))
 
