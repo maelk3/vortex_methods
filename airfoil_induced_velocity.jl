@@ -38,6 +38,14 @@ function induced_vel_ring(P, ring, Γ, rc)
     return u
 end
 
+function induced_vel(P, rings, Γ, rc)
+    u = zeros(3)
+    for i∈1:(size(rings)[1])
+        u += induced_vel_ring(P, rings[i,:,:,:], Γ[i], rc)
+            end
+    return u
+end
+
 # lagrangian markers coordinates
 x_markers = repeat(range(0, c, length=N+1), 1, M+1)
 y_markers = repeat(range(0, 1, length=M+1), 1, N+1)'
@@ -96,9 +104,7 @@ z = permutedims(repeat(range(zlims[1], zlims[2], length=nz), 1, nx, ny), (2, 3, 
 P = permutedims(cat(x, y, z, dims=4), (4, 1, 2, 3))
 V = repeat(U, 1, nx, ny, nz)
 for x∈1:nx, y∈1:ny, z∈1:nz
-    for i∈1:N, j∈1:M
-        V[:,x,y,z] += induced_vel_ring(P[:,x,y,z], rings[i,j,:,:,:], Γ[i,j], rc)
-    end
+    V[:,x,y,z] += induced_vel(P[:,x,y,z], reshape(rings, N*M, 4, 2, 3), reshape(Γ, N*M), rc)
 end
 
 # PyPlot
@@ -122,7 +128,12 @@ PyPlot.show()
 # PlotlyJS
 layout = PlotlyJS.Layout(scene=attr(xaxis_range=[-1.0, 1.0],
                                     yaxis_range=[-0.5, 1.5],
-                                    zaxis_range=[-1.0, 1.0]))
+                                    zaxis_range=[-1.0, 1.0]),
+                         scene_camera=attr(
+                             up=attr(x=0, y=0, z=1),
+                             center=attr(x=c/4, y=0, z=0),
+                             eye=attr(x=1.25, y=1.25, z=1.25)
+                         ))
 
 surface = PlotlyJS.mesh3d(x=vec(x_markers),
                           y=vec(y_markers),
