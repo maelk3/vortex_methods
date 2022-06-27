@@ -7,10 +7,6 @@ U₀ = 0.1                       # speed
 U  = U₀*[1.0, 0.0, 0.0]        # freestream velocity
 Ω  = 1.0
 
-rotation = [1.0 0.0        0.0
-            0.0 cos(Ω*Δt) -sin(Ω*Δt)
-            0.0 sin(Ω*Δt)  cos(Ω*Δt)]
-
 ρ = 1.0                        # air density    
 
 # BLADE PROFILE DEFINITION
@@ -27,7 +23,11 @@ N = 5                          # chordwise number of panels
 M = 20                         # spanwise number of panels
 
 nt = 40                        # number of time steps
-Δt = 0.2                       # time intervals
+Δt = 0.5                       # time intervals
+
+rotation = [1.0 0.0        0.0
+            0.0 cos(Ω*Δt) -sin(Ω*Δt)
+            0.0 sin(Ω*Δt)  cos(Ω*Δt)]
 
 # RANKINE VORTEX SEGMENT AND RING DEFINITION
 function induced_vel_segment(P, A, B, r₀, Γ, rc)
