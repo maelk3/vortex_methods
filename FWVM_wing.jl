@@ -154,24 +154,6 @@ for t∈1:nt
     end
 end
 
-# total velocity field computation
-nx, ny, nz = 50, 1, 50
-
-xlims = [-0.1, 0.3]
-ylims = [0.5,  0.5]
-zlims = [-0.1, 0.1]
-
-x = permutedims(repeat(range(xlims[1], xlims[2], length=nx), 1, ny, nz), (1, 2, 3))
-y = permutedims(repeat(range(ylims[1], ylims[2], length=ny), 1, nx, nz), (2, 1, 3))
-z = permutedims(repeat(range(zlims[1], zlims[2], length=nz), 1, nx, ny), (2, 3, 1))
-
-P = permutedims(cat(x, y, z, dims=4), (4, 1, 2, 3))
-V = repeat(U, 1, nx, ny, nz)
-for x∈1:nx, y∈1:ny, z∈1:nz
-    V[:,x,y,z] += induced_vel(P[:,x,y,z], reshape(blade_rings, N*M, 4, 2, 3), reshape(Γ, N*M), rc)
-    V[:,x,y,z] += induced_vel(P[:,x,y,z], reshape(wake_rings, nt*M, 4, 2, 3), reshape(wake_Γ, nt*M), rc)
-end
-
 # PlotlyJS
 x_max = maximum(wake_panel_markers[1,:,:])
 
